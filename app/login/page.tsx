@@ -7,11 +7,13 @@ export default function LoginPage(){
     const [ emailUser, setEmailUser ] = useState('')
     const [ passwordUser, setPasswordUser ] = useState('')
     const [ loading, setLoading ] = useState(false)
-    const [ error, setError ] = useState(false)
+    const [ message, setMessage ] = useState('')
+    const [ messageType, setMessageType ] = useState<'success' | 'error' | ''>('')
 
     const handleLogin = async () => {
 
         setLoading(true)
+        setMessage('')
 
     try{
         const r = await fetch('http://localhost:3001/api/login', {
@@ -20,14 +22,24 @@ export default function LoginPage(){
             body: JSON.stringify({ emailUser, passwordUser }) 
         })
         
-        if(!r.ok){setError(true); throw new Error}
-
         const data = await r.json()
+
+        if(!r.ok){
+            setMessageType('error')
+            setMessage(data.msg)
+            throw new Error(data.msg)
+        }
+
+        setMessageType('success')
+        setMessage(data.msg)
         console.log('Login bem sucedido:', data)
 
-    }catch(error){
+    }catch(error: any){
         console.log('Erro no login:', error)
-        setError(true)       
+        if(!message) {
+            setMessageType('error')
+            setMessage(error.message || 'Erro ao fazer login')
+        }       
     }finally{
         setLoading(false)
     }
@@ -37,7 +49,7 @@ export default function LoginPage(){
         <div>
             <h1>Login</h1>
             <input 
-                type="text" 
+                type="email" 
                 name="emailUser"
                 value={emailUser}
                 onChange={(e) => setEmailUser(e.target.value)}
@@ -53,7 +65,14 @@ export default function LoginPage(){
             <button onClick={handleLogin} disabled={loading}>
                 {loading ? 'Carregando...' : 'Entrar'}
             </button>
-            {error && <p>Erro ao fazer login</p>}
+            {message && (
+                <p style={{ 
+                    color: messageType === 'success' ? 'green' : 'red',
+                    marginTop: '10px'
+                }}>
+                    {message}
+                </p>
+            )}
         </div>
     )
 }
